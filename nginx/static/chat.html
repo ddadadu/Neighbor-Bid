@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>1:1 채팅 - 동네경매</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header>
+    <h1><a href="/">동네경매</a></h1>
+    <span id="who"></span>
+  </header>
+
+  <p id="error" class="error"></p>
+
+  <section id="chat" hidden>
+    <a id="back" class="muted">← 경매로 돌아가기</a>
+    <h2 id="title"></h2>
+    <p id="partner" class="muted"></p>
+    <p id="notice" class="notice"></p>
+
+    <ul id="messages"></ul>
+
+    <form id="chat-form">
+      <input id="content" maxlength="200" placeholder="메시지 입력 (200자 이하)" autocomplete="off">
+      <button type="submit" id="send">보내기</button>
+    </form>
+    <p id="chat-msg" class="muted"></p>
+  </section>
+
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+  <script src="/js/common.js"></script>
+  <script src="/js/chat.js"></script>
+</body>
+</html>

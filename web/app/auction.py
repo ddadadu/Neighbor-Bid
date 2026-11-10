@@ -67,3 +67,21 @@ def place_bid(guest, item_id, amount):
     payload = {"item_id": item_id, "current_price": amount,
                "nickname": guest["nickname"], "time": t}
     return True, "", payload, closed
+
+def chat_access(db, item_id, guest_id):
+    """1:1 채팅 권한 확인. (item_row, 'ok' | 'not_found' | 'forbidden')"""
+    row = db.execute(
+        "SELECT id, title, status, seller_id, top_bidder_id, end_at FROM items WHERE id = ?",
+        (item_id,),
+    ).fetchone()
+    if row is None:
+        return None, "not_found"
+    if row["status"] != "CLOSED" or guest_id not in (row["seller_id"], row["top_bidder_id"]):
+        return row, "forbidden"
+    return row, "ok"
+
+
+CHAT_ERRORS = {
+    "not_found": "종료되어 삭제되었거나 없는 경매입니다.",
+    "forbidden": "판매자와 낙찰자만 이용할 수 있는 채팅입니다.",
+}

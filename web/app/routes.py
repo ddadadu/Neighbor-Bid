@@ -3,6 +3,7 @@ import sqlite3
 import uuid
 from functools import wraps
 from .auction import close_expired
+from .auction import CHAT_ERRORS, chat_access, close_expired
 
 from flask import Blueprint, jsonify, request, send_from_directory, session
 
@@ -193,3 +194,34 @@ def get_item(item_id):
                              and me["id"] == row["top_bidder_id"])
     data["server_now"] = now()
     return jsonify(data)
+
+# ---------- 1:1 채팅 기록 ----------
+
+@bp.get("/items/<int:item_id>/messages")
+@login_required
+def get_messages(guest, item_id):
+    with get_db() as db:
+        close_expired(db)
+        item, status = chat_access(db, item_id, guest["id"])
+        if status != "ok":
+            code = 404 if status == "not_found" else 403
+            return jsonify(error=CHAT_ERRORS[status]), code
+
+        rows = db.execute(
+            """SELECT m.id, m.content, m.created_at, m.guest_id, g.nickname
+               FROM messages m JOIN guests g ON g.id = m.guest_id
+               WHERE m.item_id = ? ORDER BY m.id ASC LIMIT 200""",
+            (item_id,),
+        ).fetchall()
+        partner_id = item["top_bidder_id"] if guest["id"] == item["seller_id"] else item["seller_id"]
+        partner = db.execute("SELECT nickname FROM guests WHERE id = ?", (partner_id,)).fetchone()
+
+    return jsonify(
+        item={"id": item["id"], "title": item["title"], "end_at": item["end_at"]},
+        me={"id": guest["id"], "nickname": guest["nickname"],
+            "role": "판매자" if guest["id"] == item["seller_id"] else "낙찰자"},
+        partner=partner["nickname"] if partner else "",
+        messages=[dict(r) for r in rows],
+        cleanup_after_min=int(os.environ.get("CLEANUP_AFTER_MIN", "30")),
+        server_now=now(),
+    )

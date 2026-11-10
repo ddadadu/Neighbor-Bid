@@ -1,3 +1,4 @@
+[hidden] { display: none !important; }
 body { font-family: -apple-system, sans-serif; max-width: 720px; margin: 0 auto; padding: 16px; }
 header { display: flex; justify-content: space-between; align-items: center; }
 input, button, .btn { font-size: 16px; padding: 8px 12px; }
@@ -27,3 +28,15 @@ header a { color: inherit; text-decoration: none; }
 #bid-form { display: flex; gap: 8px; }
 .flash { animation: flash .8s ease; }
 @keyframes flash { from { background: #fff3c4; } to { background: transparent; } }  
+
+.notice { font-size: 13px; background: #f9eeda; padding: 8px 10px; border-radius: 8px; }
+#messages { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 8px;
+            max-height: 50vh; overflow-y: auto; margin: 12px 0; }
+#messages li { display: flex; flex-direction: column; max-width: 75%; }
+#messages .mine { align-self: flex-end; align-items: flex-end; }
+#messages .theirs { align-self: flex-start; }
+#messages .bubble { padding: 8px 12px; border-radius: 14px; background: #f0efec; word-break: break-word; }
+#messages .mine .bubble { background: #ff7a00; color: #fff; }
+#messages .who, #messages .time { font-size: 11px; color: #999; }
+#chat-form { display: flex; gap: 8px; }
+#chat-form input { flex: 1; }
