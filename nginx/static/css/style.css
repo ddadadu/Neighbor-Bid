@@ -1,0 +1,6 @@
+body { font-family: -apple-system, sans-serif; max-width: 720px; margin: 0 auto; padding: 16px; }
+header { display: flex; justify-content: space-between; align-items: center; }
+input, button, .btn { font-size: 16px; padding: 8px 12px; }
+.btn { display: inline-block; background: #ff7a00; color: #fff; text-decoration: none; border-radius: 6px; }
+button { cursor: pointer; }
+.error { color: #d33; }

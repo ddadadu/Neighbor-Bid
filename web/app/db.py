@@ -79,7 +79,7 @@ def init_db():
     os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
     conn = _connect()
     try:
-        conn.execute("PRAGMA journal_mosde = WAL")   # 읽기·쓰기가 서로 덜 막히게
+        conn.execute("PRAGMA journal_mode = WAL")   # 읽기·쓰기가 서로 덜 막히게
         conn.executescript(SCHEMA)
         conn.commit()
     finally:

@@ -4,16 +4,31 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>동네경매</title>
+  <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
-  <h1>동네경매</h1>
-  <p id="health">서버 상태 확인 중...</p>
-  <script>
-    fetch("/api/health")
-      .then(r => r.json())
-      .then(d => document.getElementById("health").textContent =
-        `서버: ${d.status} / Redis: ${d.redis}`)
-      .catch(() => document.getElementById("health").textContent = "서버 연결 실패");
-  </script>
+  <header>
+    <h1>동네경매</h1>
+    <span id="who"></span>
+  </header>
+
+  <!-- 입장 화면 -->
+  <section id="enter" hidden>
+    <h2>닉네임으로 입장</h2>
+    <form id="enter-form">
+      <input id="nickname" placeholder="닉네임 (2~12자)" maxlength="12" required>
+      <button type="submit">입장</button>
+    </form>
+    <p id="enter-error" class="error"></p>
+  </section>
+
+  <!-- 메인 화면 (T1-4에서 목록 추가) -->
+  <section id="main" hidden>
+    <a href="/new.html" class="btn">+ 물품 등록</a>
+    <div id="items"><p>경매 목록이 여기에 표시됩니다.</p></div>
+  </section>
+
+  <script src="/js/common.js"></script>
+  <script src="/js/index.js"></script>
 </body>
 </html>
