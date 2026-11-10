@@ -9,7 +9,9 @@ SCHEMA = """
 CREATE TABLE IF NOT EXISTS guests (
     id          TEXT PRIMARY KEY,              -- UUID
     nickname    TEXT NOT NULL UNIQUE,
-    created_at  INTEGER NOT NULL
+    created_at  INTEGER NOT NULL,
+    last_seen   INTEGER,                       -- 마지막 활동 (UTC epoch 초)
+    left_at     INTEGER                        -- 나가기 누른 시각 (NULL이면 입장 중)
 );
 
 CREATE TABLE IF NOT EXISTS items (
@@ -79,9 +81,9 @@ def init_db():
     os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
     conn = _connect()
     try:
-        conn.execute("PRAGMA journal_mode = WAL")
+        conn.execute("PRAGMA journal_mode = WAL")   # 읽기·쓰기가 서로 덜 막히게
         conn.executescript(SCHEMA)
-        # 닉네임 반납용 컬럼 (기존 DB에도 추가)
+        # 예전에 만든 DB에도 닉네임 반납용 컬럼 추가
         cols = [r[1] for r in conn.execute("PRAGMA table_info(guests)")]
         if "last_seen" not in cols:
             conn.execute("ALTER TABLE guests ADD COLUMN last_seen INTEGER")
