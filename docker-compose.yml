@@ -2,7 +2,7 @@ services:
   nginx:
     image: nginx:alpine
     ports:
-      - "8080:80"          # EC2에서는 "80:80"으로 변경
+      - "${HTTP_PORT:-8080}:80"   # 로컬 기본 8080, EC2는 .env에서 80     # EC2에서는 "80:80"으로 변경
     volumes:
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
       - ./nginx/static:/usr/share/nginx/html:ro
