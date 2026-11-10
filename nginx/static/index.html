@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>동네경매</title>
+</head>
+<body>
+  <h1>동네경매</h1>
+  <p id="health">서버 상태 확인 중...</p>
+  <script>
+    fetch("/api/health")
+      .then(r => r.json())
+      .then(d => document.getElementById("health").textContent =
+        `서버: ${d.status} / Redis: ${d.redis}`)
+      .catch(() => document.getElementById("health").textContent = "서버 연결 실패");
+  </script>
+</body>
+</html>
