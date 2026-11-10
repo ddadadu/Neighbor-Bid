@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>물품 등록 - 동네경매</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header>
+    <h1><a href="/">동네경매</a></h1>
+    <span id="who"></span>
+  </header>
+
+  <h2>경매 물품 등록</h2>
+  <form id="item-form" class="form">
+    <label>사진 (jpg/png, 5MB 이하)
+      <input type="file" name="image" id="image" accept="image/jpeg,image/png" required>
+    </label>
+    <img id="preview" alt="" hidden>
+
+    <label>물품명
+      <input name="title" maxlength="40" required>
+    </label>
+    <label>설명
+      <textarea name="description" maxlength="500" rows="4"></textarea>
+    </label>
+    <label>시작가 (원, 500원 단위)
+      <input name="start_price" type="number" min="1000" step="500" value="1000" required>
+    </label>
+    <label>경매 시간
+      <select name="duration">
+        <option value="5">5분</option>
+        <option value="10">10분</option>
+        <option value="30">30분</option>
+      </select>
+    </label>
+    <button type="submit" id="submit">등록하기</button>
+  </form>
+  <p id="error" class="error"></p>
+
+  <script src="/js/common.js"></script>
+  <script src="/js/new.js"></script>
+</body>
+</html>

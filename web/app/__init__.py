@@ -44,3 +44,8 @@ def health():
     ok = redis_ok and db_ok
     return jsonify(status="ok" if ok else "degraded",
                    redis=redis_ok, db=db_ok), (200 if ok else 503)
+
+MAX_CONTENT_LENGTH=6 * 1024 * 1024,   # 요청 전체 6MB 제한
+@app.errorhandler(413)
+def too_large(_e):
+    return jsonify(error="사진은 5MB 이하만 가능합니다."), 413

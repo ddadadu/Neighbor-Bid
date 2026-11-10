@@ -4,3 +4,7 @@ input, button, .btn { font-size: 16px; padding: 8px 12px; }
 .btn { display: inline-block; background: #ff7a00; color: #fff; text-decoration: none; border-radius: 6px; }
 button { cursor: pointer; }
 .error { color: #d33; }
+.form { display: flex; flex-direction: column; gap: 12px; }
+.form label { display: flex; flex-direction: column; gap: 4px; }
+#preview { max-width: 240px; border-radius: 8px; }
+header a { color: inherit; text-decoration: none; }
