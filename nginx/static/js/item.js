@@ -95,6 +95,12 @@ $("bid-form").addEventListener("submit", (e) => {
   });
 });
 
+socket.on("auction_deleted", (d) => {
+  if (d.id !== itemId) return;
+  $("detail").hidden = true;
+  $("error").textContent = "종료되어 삭제된 경매입니다.";
+});
+
 // ---------- 시작 ----------
 (async () => {
   const me = await getMe();

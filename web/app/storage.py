@@ -68,7 +68,7 @@ def save_image(file):
 
 
 def delete_image(key):
-    """사진 삭제. 이미 없으면 조용히 넘어간다 (T3-2 자동 정리에서 사용)."""
+    """사진 삭제. 이미 없으면 조용히 넘어간다."""
     if not key:
         return
     try:
@@ -76,5 +76,7 @@ def delete_image(key):
             _client().delete_object(Bucket=BUCKET, Key=key)
         else:
             os.remove(os.path.join(LOCAL_DIR, key))
-    except (FileNotFoundError, Exception):
+    except FileNotFoundError:
         pass
+    except Exception as e:
+        print(f"[storage] delete failed {key}: {e!r}", flush=True)

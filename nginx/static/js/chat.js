@@ -47,6 +47,12 @@ socket.on("chat_message", (m) => {
   if (m.item_id === itemId) addMessage(m);
 });
 
+socket.on("auction_deleted", (d) => {
+  if (d.id !== itemId) return;
+  $("chat").hidden = true;
+  $("error").textContent = "경매 종료 후 보관 기간이 지나 대화가 삭제되었습니다.";
+});
+
 $("chat-form").addEventListener("submit", (e) => {
   e.preventDefault();
   const content = $("content").value.trim();

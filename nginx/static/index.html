@@ -9,7 +9,10 @@
 <body>
   <header>
     <h1>동네경매</h1>
-    <span id="who"></span>
+    <span>
+      <span id="who"></span>
+      <button id="leave" type="button" hidden>나가기</button>
+    </span>
   </header>
 
   <!-- 입장 화면 -->
@@ -22,10 +25,10 @@
     <p id="enter-error" class="error"></p>
   </section>
 
-  <!-- 메인 화면 (T1-4에서 목록 추가) -->
+  <!-- 메인 화면 -->
   <section id="main" hidden>
     <a href="/new.html" class="btn">+ 물품 등록</a>
-    <div id="items"><p>경매 목록이 여기에 표시됩니다.</p></div>
+    <div id="items"><p>경매 목록을 불러오는 중...</p></div>
   </section>
 
   <script src="/js/common.js"></script>

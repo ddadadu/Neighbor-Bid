@@ -79,8 +79,14 @@ def init_db():
     os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
     conn = _connect()
     try:
-        conn.execute("PRAGMA journal_mode = WAL")   # 읽기·쓰기가 서로 덜 막히게
+        conn.execute("PRAGMA journal_mode = WAL")
         conn.executescript(SCHEMA)
+        # 닉네임 반납용 컬럼 (기존 DB에도 추가)
+        cols = [r[1] for r in conn.execute("PRAGMA table_info(guests)")]
+        if "last_seen" not in cols:
+            conn.execute("ALTER TABLE guests ADD COLUMN last_seen INTEGER")
+        if "left_at" not in cols:
+            conn.execute("ALTER TABLE guests ADD COLUMN left_at INTEGER")
         conn.commit()
     finally:
         conn.close()

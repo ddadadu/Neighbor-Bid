@@ -2,29 +2,35 @@ import os
 import sqlite3
 import uuid
 from functools import wraps
-from .auction import close_expired
-from .auction import CHAT_ERRORS, chat_access, close_expired
 
 from flask import Blueprint, jsonify, request, send_from_directory, session
 
+from .auction import CHAT_ERRORS, chat_access, close_expired
 from .db import get_db, now
 from .storage import LOCAL_DIR, UploadError, delete_image, save_image
 
 bp = Blueprint("api", __name__, url_prefix="/api")
 
 
+# ---------- 세션·입장 ----------
+
 def current_guest():
-    """세션 쿠키의 guest_id로 현재 사용자 조회. 없으면 None."""
+    """세션 쿠키의 guest_id로 현재 사용자 조회 + 마지막 활동 시각 갱신.
+    나가기를 누른 게스트(left_at)는 예전 쿠키가 있어도 거부한다."""
     gid = session.get("guest_id")
     if not gid:
         return None
     with get_db() as db:
-        row = db.execute("SELECT id, nickname FROM guests WHERE id = ?", (gid,)).fetchone()
+        row = db.execute(
+            "SELECT id, nickname FROM guests WHERE id = ? AND left_at IS NULL", (gid,)
+        ).fetchone()
+        if row:
+            db.execute("UPDATE guests SET last_seen = ? WHERE id = ?", (now(), gid))
     return dict(row) if row else None
 
 
 def login_required(f):
-    """입장한 사용자만 호출할 수 있는 API에 붙이는 데코레이터 (T1-3부터 사용)."""
+    """입장한 사용자만 호출할 수 있는 API에 붙이는 데코레이터."""
     @wraps(f)
     def wrapper(*args, **kwargs):
         guest = current_guest()
@@ -48,16 +54,17 @@ def enter():
         return jsonify(me)
 
     gid = str(uuid.uuid4())
+    t = now()
     try:
         with get_db() as db:
             db.execute(
-                "INSERT INTO guests (id, nickname, created_at) VALUES (?, ?, ?)",
-                (gid, nickname, now()),
+                "INSERT INTO guests (id, nickname, created_at, last_seen) VALUES (?, ?, ?, ?)",
+                (gid, nickname, t, t),
             )
     except sqlite3.IntegrityError:
         return jsonify(error="이미 사용 중인 닉네임입니다."), 409
 
-    session.permanent = True          # 7일 유지 (PERMANENT_SESSION_LIFETIME)
+    session.permanent = True          # 1일 유지 (PERMANENT_SESSION_LIFETIME)
     session["guest_id"] = gid
     return jsonify(id=gid, nickname=nickname), 201
 
@@ -67,13 +74,43 @@ def me():
     guest = current_guest()
     if guest is None:
         return jsonify(error="입장 정보가 없습니다."), 401
-    return jsonify(guest)
+    gid = guest["id"]
+    with get_db() as db:
+        # 진행 중인 경매(판매 중·최고 입찰자) + 낙찰 채팅 대상
+        active = db.execute(
+            """SELECT COUNT(*) FROM items
+               WHERE (seller_id = ? OR top_bidder_id = ?) AND status IN ('OPEN', 'CLOSED')""",
+            (gid, gid),
+        ).fetchone()[0]
+        has_records = db.execute(
+            """SELECT EXISTS (SELECT 1 FROM items WHERE seller_id = ? OR top_bidder_id = ?)
+                   OR EXISTS (SELECT 1 FROM bids WHERE guest_id = ?)
+                   OR EXISTS (SELECT 1 FROM messages WHERE guest_id = ?)""",
+            (gid, gid, gid, gid),
+        ).fetchone()[0]
+    return jsonify(id=gid, nickname=guest["nickname"],
+                   active_count=active, has_records=bool(has_records))
 
 
 @bp.post("/leave")
 def leave():
-    session.clear()
+    gid = session.pop("guest_id", None)
+    if gid:
+        with get_db() as db:
+            # 기록이 없으면 바로 삭제 → 닉네임 즉시 반납
+            cur = db.execute(
+                """DELETE FROM guests WHERE id = ?
+                     AND NOT EXISTS (SELECT 1 FROM items    WHERE seller_id = ? OR top_bidder_id = ?)
+                     AND NOT EXISTS (SELECT 1 FROM bids     WHERE guest_id = ?)
+                     AND NOT EXISTS (SELECT 1 FROM messages WHERE guest_id = ?)""",
+                (gid, gid, gid, gid, gid),
+            )
+            # 기록이 있어 남겨 둔 경우 → 나감 표시 (기록이 정리되면 바로 반납)
+            if cur.rowcount == 0:
+                db.execute("UPDATE guests SET left_at = ? WHERE id = ?", (now(), gid))
+    session.clear()                   # 응답에 쿠키 삭제(Set-Cookie 만료) 포함
     return jsonify(ok=True)
+
 
 # ---------- 물품 등록 ----------
 
@@ -133,6 +170,7 @@ def create_item(guest):
 def local_upload(key):
     return send_from_directory(LOCAL_DIR, key)
 
+
 # ---------- 목록·상세 ----------
 
 ITEM_SELECT = """
@@ -165,9 +203,9 @@ def list_items():
         close_expired(db)
         rows = db.execute(
             ITEM_SELECT +
-            " ORDER BY (i.status = 'OPEN') DESC, "       # 진행 중 먼저
-            " CASE WHEN i.status = 'OPEN' THEN i.end_at END ASC, "   # 마감 임박 순
-            " i.end_at DESC"                              # 종료된 것은 최근 순
+            " ORDER BY (i.status = 'OPEN') DESC, "                     # 진행 중 먼저
+            " CASE WHEN i.status = 'OPEN' THEN i.end_at END ASC, "     # 마감 임박 순
+            " i.end_at DESC"                                           # 종료된 것은 최근 순
         ).fetchall()
     return jsonify(items=[item_json(r) for r in rows], server_now=now())
 
@@ -194,6 +232,7 @@ def get_item(item_id):
                              and me["id"] == row["top_bidder_id"])
     data["server_now"] = now()
     return jsonify(data)
+
 
 # ---------- 1:1 채팅 기록 ----------
 

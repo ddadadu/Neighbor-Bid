@@ -1,9 +1,10 @@
-const $ = (id) => document.getElementById(id);
-let items = [];
+var $ = (id) => document.getElementById(id);
+var items = [];
 
 function showMain(me) {
   $("enter").hidden = true;
   $("main").hidden = false;
+  $("leave").hidden = false;
   $("who").textContent = `${me.nickname}님`;
   loadItems();
   setInterval(loadItems, 10000);   // 10초마다 목록 새로고침
@@ -47,6 +48,7 @@ function tick() {
   });
 }
 
+// ---------- 입장 ----------
 $("enter-form").addEventListener("submit", async (e) => {
   e.preventDefault();
   $("enter-error").textContent = "";
@@ -58,6 +60,26 @@ $("enter-form").addEventListener("submit", async (e) => {
   }
 });
 
+// ---------- 나가기 ----------
+$("leave").addEventListener("click", async () => {
+  const me = await getMe();
+  if (me && me.active_count > 0) {
+    const ok = confirm(
+      `진행 중인 경매나 낙찰 채팅이 ${me.active_count}건 있습니다.\n` +
+      "나가면 이 닉네임으로 다시 들어올 수 없어 경매와 채팅에 참여할 수 없습니다.\n" +
+      "닉네임은 경매 기록이 정리된 뒤(종료 30분 후) 다시 사용할 수 있습니다.\n\n" +
+      "정말 나가시겠어요?"
+    );
+    if (!ok) return;
+  } else if (me && me.has_records) {
+    const ok = confirm("이 닉네임은 남은 기록이 정리될 때까지 사용할 수 없습니다.\n나가시겠어요?");
+    if (!ok) return;
+  }
+  await api("/api/leave", { method: "POST" });
+  location.reload();
+});
+
+// ---------- 시작 ----------
 (async () => {
   const me = await getMe();
   if (me) showMain(me);
