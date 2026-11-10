@@ -2,6 +2,7 @@ import os
 import sqlite3
 import uuid
 from functools import wraps
+from .auction import close_expired
 
 from flask import Blueprint, jsonify, request, send_from_directory, session
 
@@ -130,3 +131,65 @@ def create_item(guest):
 @bp.get("/uploads/<path:key>")
 def local_upload(key):
     return send_from_directory(LOCAL_DIR, key)
+
+# ---------- 목록·상세 ----------
+
+ITEM_SELECT = """
+SELECT i.*, s.nickname AS seller_nickname, b.nickname AS top_bidder_nickname
+FROM items i
+JOIN guests s ON s.id = i.seller_id
+LEFT JOIN guests b ON b.id = i.top_bidder_id
+"""
+
+
+def item_json(row):
+    return {
+        "id": row["id"],
+        "title": row["title"],
+        "description": row["description"],
+        "image_url": row["image_url"],
+        "start_price": row["start_price"],
+        "current_price": row["current_price"],
+        "status": row["status"],
+        "end_at": row["end_at"],
+        "seller_id": row["seller_id"],
+        "seller_nickname": row["seller_nickname"],
+        "top_bidder_nickname": row["top_bidder_nickname"],
+    }
+
+
+@bp.get("/items")
+def list_items():
+    with get_db() as db:
+        close_expired(db)
+        rows = db.execute(
+            ITEM_SELECT +
+            " ORDER BY (i.status = 'OPEN') DESC, "       # 진행 중 먼저
+            " CASE WHEN i.status = 'OPEN' THEN i.end_at END ASC, "   # 마감 임박 순
+            " i.end_at DESC"                              # 종료된 것은 최근 순
+        ).fetchall()
+    return jsonify(items=[item_json(r) for r in rows], server_now=now())
+
+
+@bp.get("/items/<int:item_id>")
+def get_item(item_id):
+    me = current_guest()
+    with get_db() as db:
+        close_expired(db)
+        row = db.execute(ITEM_SELECT + " WHERE i.id = ?", (item_id,)).fetchone()
+        if row is None:
+            return jsonify(error="종료되어 삭제되었거나 없는 경매입니다."), 404
+        bids = db.execute(
+            """SELECT b.amount, b.created_at, g.nickname
+               FROM bids b JOIN guests g ON g.id = b.guest_id
+               WHERE b.item_id = ? ORDER BY b.id DESC LIMIT 20""",
+            (item_id,),
+        ).fetchall()
+
+    data = item_json(row)
+    data["bids"] = [dict(b) for b in bids]
+    data["is_seller"] = bool(me and me["id"] == row["seller_id"])
+    data["is_winner"] = bool(me and row["status"] == "CLOSED"
+                             and me["id"] == row["top_bidder_id"])
+    data["server_now"] = now()
+    return jsonify(data)

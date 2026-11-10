@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>경매 상세 - 동네경매</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header>
+    <h1><a href="/">동네경매</a></h1>
+    <span id="who"></span>
+  </header>
+
+  <p id="error" class="error"></p>
+
+  <section id="detail" hidden>
+    <img id="image" class="hero" alt="">
+    <h2 id="title"></h2>
+    <p id="seller" class="muted"></p>
+    <p id="description"></p>
+
+    <div class="price-box">
+      <div>현재가 <strong id="price"></strong></div>
+      <div><span id="status" class="badge"></span> <span id="left"></span></div>
+      <div id="winner" class="muted"></div>
+    </div>
+
+    <!-- T2-2에서 실시간 입찰 연결 -->
+    <form id="bid-form">
+      <input id="amount" type="number" step="500" placeholder="입찰 금액">
+      <button type="submit" id="bid-btn">입찰하기</button>
+    </form>
+    <p id="bid-msg" class="muted"></p>
+
+    <!-- T3-1에서 1:1 채팅 연결 -->
+    <a id="chat-link" class="btn" hidden>판매자·낙찰자 1:1 채팅</a>
+
+    <h3>입찰 기록</h3>
+    <ul id="bids"></ul>
+  </section>
+
+  <script src="/js/common.js"></script>
+  <script src="/js/item.js"></script>
+</body>
+</html>
